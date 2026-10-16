@@ -1,0 +1,14 @@
+{
+	"node": "n8n-nodes-mesharc.meshArc",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Data & Storage", "Development"],
+	"resources": {
+		"credentialDocumentation": [
+			{ "url": "https://github.com/mesharc-org/n8n-nodes-mesharc?tab=readme-ov-file#credentials" }
+		],
+		"primaryDocumentation": [
+			{ "url": "https://github.com/mesharc-org/n8n-nodes-mesharc?tab=readme-ov-file" }
+		]
+	}
+}

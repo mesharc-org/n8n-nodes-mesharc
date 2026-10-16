@@ -1,0 +1,53 @@
+# Publishes the package to npm, with a provenance statement, when a version tag is pushed.
+#
+# n8n requires community nodes submitted for verification to be published from
+# GitHub Actions with npm provenance (since May 1 2026). `npm run release` runs
+# `n8n-node release`, which inside GitHub Actions lints, builds and publishes with
+# provenance. The `npm` environment holds the publish until it is approved.
+#
+# Release: bump "version" in package.json and CHANGELOG.md in a pull request,
+# merge it, then push the tag:  git tag -a v0.2.0 -m "v0.2.0" && git push origin v0.2.0
+#
+# npm authentication: npm Trusted Publishing (OIDC) once the package exists on npm.
+# The very first publish uses an NPM_TOKEN repository secret, removed afterwards.
+
+name: Publish
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/n8n-nodes-mesharc
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - name: npm new enough for trusted publishing
+        run: npm install -g npm@latest
+      - name: The tag names the version in package.json
+        run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
+      - run: npm ci
+      - name: Lint, build and publish with provenance
+        run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
