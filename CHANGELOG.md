@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+No change to the nodes or the credential. The first release published from GitHub Actions through npm
+trusted publishing (OIDC), with no access token, and with provenance.
+
 ## 0.1.0
 
 The first release.
