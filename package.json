@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-mesharc",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"description": "n8n nodes for MeshArc, the web crawler: scrape, crawl, map and search the web, and start workflows when a watched site changes.",
 	"license": "MIT",
 	"homepage": "https://mesharc.dev",

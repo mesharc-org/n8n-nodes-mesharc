@@ -18,7 +18,7 @@ In n8n, go to **Settings → Community Nodes → Install**, enter `n8n-nodes-mes
 You need a MeshArc API key.
 
 1. Sign in at [mesharc.dev](https://mesharc.dev). The free plan includes 1,000 credits with no card.
-2. Go to **Settings → API keys** and create a key. Scraping, crawling, mapping and searching need a key that can **write**. A read-only key can only use **Get Changes** and the trigger.
+2. Go to **Settings → API keys** and create a key. Scraping, crawling, mapping, searching and the instant trigger need a key that can **write**. A read-only key can only use **Get Changes** and the polling trigger (version 1).
 3. In n8n, create a **MeshArc API** credential and paste the key. n8n tests it straight away.
 
 ## Operations
@@ -39,14 +39,20 @@ For Scrape, Crawl and Get Crawl, turn **Simplify** off to get MeshArc's full res
 **MeshArc Trigger → Page Changed** starts the workflow when a run of a MeshArc project finds changed pages.
 
 1. In MeshArc, create a project for the site you want to watch, and give it a schedule (hourly, daily, weekly). MeshArc crawls on that schedule and records what changed.
-2. In n8n, add **MeshArc Trigger**. Pick the **Project**, choose which **Changes** start the workflow (Added, Modified, Removed, Fields Changed), and set how often n8n checks.
+2. In n8n, add **MeshArc Trigger**. Pick the **Project**, and choose which **Changes** start the workflow (Added, Modified, Removed, Fields Changed).
+3. Activate the workflow.
+
+**It is instant.** Activating the workflow subscribes it to the project in MeshArc, and MeshArc sends each finished run to n8n as soon as its changes are recorded. Deactivating the workflow removes the subscription. This needs an n8n that MeshArc can reach from the internet: n8n Cloud, or a self-hosted n8n with a public URL. An n8n on `localhost` cannot be reached.
 
 **How it behaves:**
 - **Each changed page is one item:** kind, URL, title, words added and removed, word counts, project, run, and time.
-- **Activating it reports nothing old.** It only remembers where the project is.
-- **Every run after that is reported once,** even when several runs finish between two checks.
-- **Nothing is lost when a check fails.** It tries again at the next check.
-- **Fetch Test Event** shows the latest real changes without affecting what the trigger reports later.
+- **Activating it reports nothing old.** Only runs that finish after that start the workflow.
+- **A run that changed nothing starts nothing,** and neither does a project's first run, which has nothing to compare with.
+- **Only MeshArc can start it.** Each subscription has its own signing secret, and a message without a valid signature is refused.
+- **Your project's own webhook is not touched.** The subscription is separate, so a webhook URL you set in MeshArc keeps working.
+- **Listen for Test Event** waits for the project's next finished run.
+
+**Workflows made with version 1 keep polling.** Before 0.2.0, the trigger checked MeshArc on a schedule instead. Workflows that already use it keep doing so, unchanged: it reports every run once, even when several finish between two checks, and its **Fetch Test Event** shows the latest real changes. New triggers use the instant version.
 
 ## Cost
 
@@ -56,7 +62,7 @@ Requests are billed in MeshArc credits, the same as any other API call:
 - a sitemap read is 1 credit per sitemap file;
 - a web search costs what its results page costs.
 
-**Get Changes** and the trigger only read what MeshArc already stored, so they cost nothing. See [pricing](https://mesharc.dev/pricing).
+**Get Changes** and the trigger only read what MeshArc already stored, so they cost nothing. The crawls themselves are the project's, billed on its schedule. See [pricing](https://mesharc.dev/pricing).
 
 ## Compatibility
 

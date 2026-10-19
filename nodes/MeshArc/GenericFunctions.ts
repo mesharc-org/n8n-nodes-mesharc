@@ -1,18 +1,21 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import type {
 	IDataObject,
 	IExecuteFunctions,
+	IHookFunctions,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	INodeListSearchResult,
 	IPollFunctions,
+	IWebhookFunctions,
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, sleep } from 'n8n-workflow';
 
 export const BASE_URL = 'https://api.mesharc.dev/api/v1';
 
-type Context = IExecuteFunctions | IPollFunctions | ILoadOptionsFunctions;
+type Context = IExecuteFunctions | IPollFunctions | ILoadOptionsFunctions | IHookFunctions | IWebhookFunctions;
 
 /** One authenticated call to the MeshArc API. Refusals become a NodeApiError with the API's own message. */
 export async function mesharcRequest(
@@ -101,6 +104,32 @@ export function changeItem(projectId: string, change: IDataObject, entry: IDataO
 		wordsAfter: entry.wordsAfter ?? null,
 		fields: entry.fields ?? [],
 	};
+}
+
+/**
+ * The changed pages one finished run of a project found, of the kinds asked for, as items.
+ * A baseline run (the first, or the first after a change of settings) compares nothing.
+ */
+export async function runChangeItems(
+	this: Context,
+	projectId: string,
+	runId: string,
+	kinds: string[],
+): Promise<IDataObject[]> {
+	const res = await mesharcRequest.call(this, 'GET', `/projects/${projectId}/changes`, undefined, { run_id: runId });
+	const change = res.change as IDataObject | null;
+	if (!change) return [];
+	return ((change.feed as IDataObject[]) || [])
+		.filter((entry) => kinds.includes(String(entry.kind)))
+		.map((entry) => changeItem(projectId, change, entry));
+}
+
+/** Is `header` (X-MeshArc-Signature, `sha256=<hex>`) the HMAC of `body` under `secret`? */
+export function validSignature(secret: string, body: Buffer, header: string): boolean {
+	if (!secret || !header) return false;
+	const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(body).digest('hex')}`);
+	const given = Buffer.from(header);
+	return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
 /** The workspace's projects, for the project picker. */
