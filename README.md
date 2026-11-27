@@ -68,6 +68,16 @@ Requests are billed in MeshArc credits, the same as any other API call:
 
 Tested with n8n 2.43 on Node.js 24.
 
+## Development
+
+Working on this package needs Node.js 24 or later (`.nvmrc`): n8n's expression runtime, which `npm ci` installs with the `n8n-workflow` peer dependency, builds a native module (`isolated-vm`) that requires it. Installing the node in n8n has no such requirement of its own.
+
+```bash
+nvm use
+npm ci
+npm run lint && npm run build
+```
+
 ## Resources
 
 - [MeshArc docs](https://mesharc.dev/docs) and [API reference](https://mesharc.dev/docs/api)
